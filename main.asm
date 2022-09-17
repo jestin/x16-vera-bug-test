@@ -127,6 +127,16 @@ exsebpp_pal_file: .literal "8X168BPP.PAL"
 end_exsebpp_pal_file:
 
 
+sxsebpp_tile_file: .literal "16X168BPPT.BIN"
+end_sxsebpp_tile_file:
+
+sxsebpp_map_file: .literal "16X168BPPM.BIN"
+end_sxsebpp_map_file:
+
+sxsebpp_pal_file: .literal "16X168BPP.PAL"
+end_sxsebpp_pal_file:
+
+
 vram_tiles = $00000
 vram_l0_map = $10000
 vram_pal = $1fa00
@@ -257,6 +267,11 @@ tick:
 	cmp #10
 	bne :+
 	jsr load_8x16_8bpp
+:
+	lda zp_mode
+	cmp #11
+	bne :+
+	jsr load_16x16_8bpp
 :
 
 
@@ -1036,6 +1051,76 @@ load_8x16_8bpp:
 	lda #(end_exsebpp_pal_file-exsebpp_pal_file)
 	ldx #<exsebpp_pal_file
 	ldy #>exsebpp_pal_file
+	jsr SETNAM
+	lda #(^vram_pal + 2)
+	ldx #<vram_pal
+	ldy #>vram_pal
+	jsr LOAD
+
+	rts
+
+;==================================================
+; load_16x16_8bpp
+;==================================================
+load_16x16_8bpp:
+	; set video mode
+	lda #%00010001		; l0 enabled
+	sta veradcvideo
+
+	; set the l0 tile mode	
+	lda #%00000011 	; height (2-bits) - 0 (32 tiles)
+					; width (2-bits) - 0 (32 tiles
+					; T256C - 0
+					; bitmap mode - 0
+					; color depth (2-bits) - 3 (8bpp)
+	sta veral0config
+
+	lda #(<(vram_tiles >> 9) | (1 << 1) | 1)
+								;  height    |  width
+	sta veral0tilebase
+	
+	; set the tile map base address
+	lda #<(vram_l0_map >> 9)
+	sta veral0mapbase
+
+	; set video scale to 2x
+	lda #64
+	sta veradchscale
+	sta veradcvscale
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_sxsebpp_tile_file-sxsebpp_tile_file)
+	ldx #<sxsebpp_tile_file
+	ldy #>sxsebpp_tile_file
+	jsr SETNAM
+	lda #(^vram_tiles + 2)
+	ldx #<vram_tiles
+	ldy #>vram_tiles
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_sxsebpp_map_file-sxsebpp_map_file)
+	ldx #<sxsebpp_map_file
+	ldy #>sxsebpp_map_file
+	jsr SETNAM
+	lda #(^vram_l0_map + 2)
+	ldx #<vram_l0_map
+	ldy #>vram_l0_map
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_sxsebpp_pal_file-sxsebpp_pal_file)
+	ldx #<sxsebpp_pal_file
+	ldy #>sxsebpp_pal_file
 	jsr SETNAM
 	lda #(^vram_pal + 2)
 	ldx #<vram_pal
