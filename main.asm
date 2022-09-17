@@ -97,6 +97,16 @@ sxsfbpp_pal_file: .literal "16X164BPP.PAL"
 end_sxsfbpp_pal_file:
 
 
+exeebpp_tile_file: .literal "8X88BPPT.BIN"
+end_exeebpp_tile_file:
+
+exeebpp_map_file: .literal "8X88BPPM.BIN"
+end_exeebpp_map_file:
+
+exeebpp_pal_file: .literal "8X88BPP.PAL"
+end_exeebpp_pal_file:
+
+
 vram_tiles = $00000
 vram_l0_map = $10000
 vram_pal = $1fa00
@@ -212,6 +222,11 @@ tick:
 	cmp #7
 	bne :+
 	jsr load_16x16_4bpp
+:
+	lda zp_mode
+	cmp #8
+	bne :+
+	jsr load_8x8_8bpp
 :
 
 	lda #1
@@ -780,6 +795,76 @@ load_16x16_4bpp:
 	lda #(end_sxsfbpp_pal_file-sxsfbpp_pal_file)
 	ldx #<sxsfbpp_pal_file
 	ldy #>sxsfbpp_pal_file
+	jsr SETNAM
+	lda #(^vram_pal + 2)
+	ldx #<vram_pal
+	ldy #>vram_pal
+	jsr LOAD
+
+	rts
+
+;==================================================
+; load_8x8_8bpp
+;==================================================
+load_8x8_8bpp:
+	; set video mode
+	lda #%00010001		; l0 enabled
+	sta veradcvideo
+
+	; set the l0 tile mode	
+	lda #%00000011 	; height (2-bits) - 0 (32 tiles)
+					; width (2-bits) - 0 (32 tiles
+					; T256C - 0
+					; bitmap mode - 0
+					; color depth (2-bits) - 3 (8bpp)
+	sta veral0config
+
+	lda #(<(vram_tiles >> 9) | (0 << 1) | 0)
+								;  height    |  width
+	sta veral0tilebase
+	
+	; set the tile map base address
+	lda #<(vram_l0_map >> 9)
+	sta veral0mapbase
+
+	; set video scale to 2x
+	lda #64
+	sta veradchscale
+	sta veradcvscale
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exeebpp_tile_file-exeebpp_tile_file)
+	ldx #<exeebpp_tile_file
+	ldy #>exeebpp_tile_file
+	jsr SETNAM
+	lda #(^vram_tiles + 2)
+	ldx #<vram_tiles
+	ldy #>vram_tiles
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exeebpp_map_file-exeebpp_map_file)
+	ldx #<exeebpp_map_file
+	ldy #>exeebpp_map_file
+	jsr SETNAM
+	lda #(^vram_l0_map + 2)
+	ldx #<vram_l0_map
+	ldy #>vram_l0_map
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exeebpp_pal_file-exeebpp_pal_file)
+	ldx #<exeebpp_pal_file
+	ldy #>exeebpp_pal_file
 	jsr SETNAM
 	lda #(^vram_pal + 2)
 	ldx #<vram_pal
