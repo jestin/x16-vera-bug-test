@@ -77,6 +77,16 @@ sxefbpp_pal_file: .literal "16X84BPP.PAL"
 end_sxefbpp_pal_file:
 
 
+exsfbpp_tile_file: .literal "8X164BPPT.BIN"
+end_exsfbpp_tile_file:
+
+exsfbpp_map_file: .literal "8X164BPPM.BIN"
+end_exsfbpp_map_file:
+
+exsfbpp_pal_file: .literal "8X164BPP.PAL"
+end_exsfbpp_pal_file:
+
+
 vram_tiles = $00000
 vram_l0_map = $10000
 vram_pal = $1fa00
@@ -182,6 +192,11 @@ tick:
 	cmp #5
 	bne :+
 	jsr load_16x8_4bpp
+:
+	lda zp_mode
+	cmp #6
+	bne :+
+	jsr load_8x16_4bpp
 :
 
 	lda #1
@@ -617,3 +632,74 @@ load_16x8_4bpp:
 	jsr LOAD
 
 	rts
+
+;==================================================
+; load_8x16_4bpp
+;==================================================
+load_8x16_4bpp:
+	; set video mode
+	lda #%00010001		; l0 enabled
+	sta veradcvideo
+
+	; set the l0 tile mode	
+	lda #%00000010 	; height (2-bits) - 0 (32 tiles)
+					; width (2-bits) - 0 (32 tiles
+					; T256C - 0
+					; bitmap mode - 0
+					; color depth (2-bits) - 2 (4bpp)
+	sta veral0config
+
+	lda #(<(vram_tiles >> 9) | (1 << 1) | 0)
+								;  height    |  width
+	sta veral0tilebase
+	
+	; set the tile map base address
+	lda #<(vram_l0_map >> 9)
+	sta veral0mapbase
+
+	; set video scale to 2x
+	lda #64
+	sta veradchscale
+	sta veradcvscale
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exsfbpp_tile_file-exsfbpp_tile_file)
+	ldx #<exsfbpp_tile_file
+	ldy #>exsfbpp_tile_file
+	jsr SETNAM
+	lda #(^vram_tiles + 2)
+	ldx #<vram_tiles
+	ldy #>vram_tiles
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exsfbpp_map_file-exsfbpp_map_file)
+	ldx #<exsfbpp_map_file
+	ldy #>exsfbpp_map_file
+	jsr SETNAM
+	lda #(^vram_l0_map + 2)
+	ldx #<vram_l0_map
+	ldy #>vram_l0_map
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exsfbpp_pal_file-exsfbpp_pal_file)
+	ldx #<exsfbpp_pal_file
+	ldy #>exsfbpp_pal_file
+	jsr SETNAM
+	lda #(^vram_pal + 2)
+	ldx #<vram_pal
+	ldy #>vram_pal
+	jsr LOAD
+
+	rts
+
