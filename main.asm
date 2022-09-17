@@ -17,6 +17,36 @@ zp_vsync_trig		= $30
 zp_mode				= $22
 zp_loaded			= $23
 
+exetbpp_tile_file: .literal "8X82BPPT.BIN"
+end_exetbpp_tile_file:
+
+exetbpp_map_file: .literal "8X82BPPM.BIN"
+end_exetbpp_map_file:
+
+exetbpp_pal_file: .literal "8X82BPP.PAL"
+end_exetbpp_pal_file:
+
+
+sxetbpp_tile_file: .literal "16X82BPPT.BIN"
+end_sxetbpp_tile_file:
+
+sxetbpp_map_file: .literal "16X82BPPM.BIN"
+end_sxetbpp_map_file:
+
+sxetbpp_pal_file: .literal "16X82BPP.PAL"
+end_sxetbpp_pal_file:
+
+
+exstbpp_tile_file: .literal "8X162BPPT.BIN"
+end_exstbpp_tile_file:
+
+exstbpp_map_file: .literal "8X162BPPM.BIN"
+end_exstbpp_map_file:
+
+exstbpp_pal_file: .literal "8X162BPP.PAL"
+end_exstbpp_pal_file:
+
+
 sxstbpp_tile_file: .literal "16X162BPPT.BIN"
 end_sxstbpp_tile_file:
 
@@ -26,15 +56,6 @@ end_sxstbpp_map_file:
 sxstbpp_pal_file: .literal "16X162BPP.PAL"
 end_sxstbpp_pal_file:
 
-
-exetbpp_tile_file: .literal "8X82BPPT.BIN"
-end_exetbpp_tile_file:
-
-exetbpp_map_file: .literal "8X82BPPM.BIN"
-end_exetbpp_map_file:
-
-exetbpp_pal_file: .literal "8X82BPP.PAL"
-end_exetbpp_pal_file:
 
 vram_tiles = $00000
 vram_l0_map = $10000
@@ -110,7 +131,7 @@ check_vsync:
 ;==================================================
 tick:
 	lda zp_loaded
-	bne @return
+	bne @check_joy
 
 	lda zp_mode
 	cmp #0
@@ -120,11 +141,29 @@ tick:
 	lda zp_mode
 	cmp #1
 	bne :+
+	jsr load_16x8_2bpp
+:
+	lda zp_mode
+	cmp #2
+	bne :+
+	jsr load_8x16_2bpp
+:
+	lda zp_mode
+	cmp #3
+	bne :+
 	jsr load_16x16_2bpp
 :
 
 	lda #1
 	sta zp_loaded
+
+@check_joy:
+	; check joystick
+
+	jsr GETIN
+	beq @return
+	inc zp_mode
+	stz zp_loaded
 
 @return:
 	rts
@@ -191,6 +230,146 @@ load_8x8_2bpp:
 	lda #(end_exetbpp_pal_file-exetbpp_pal_file)
 	ldx #<exetbpp_pal_file
 	ldy #>exetbpp_pal_file
+	jsr SETNAM
+	lda #(^vram_pal + 2)
+	ldx #<vram_pal
+	ldy #>vram_pal
+	jsr LOAD
+
+	rts
+
+;==================================================
+; load_16x8_2bpp
+;==================================================
+load_16x8_2bpp:
+	; set video mode
+	lda #%00010001		; l0 enabled
+	sta veradcvideo
+
+	; set the l0 tile mode	
+	lda #%00000001 	; height (2-bits) - 0 (32 tiles)
+					; width (2-bits) - 0 (32 tiles
+					; T256C - 0
+					; bitmap mode - 0
+					; color depth (2-bits) - 1 (2bpp)
+	sta veral0config
+
+	lda #(<(vram_tiles >> 9) | (0 << 1) | 1)
+								;  height    |  width
+	sta veral0tilebase
+	
+	; set the tile map base address
+	lda #<(vram_l0_map >> 9)
+	sta veral0mapbase
+
+	; set video scale to 2x
+	lda #64
+	sta veradchscale
+	sta veradcvscale
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_sxetbpp_tile_file-sxetbpp_tile_file)
+	ldx #<sxetbpp_tile_file
+	ldy #>sxetbpp_tile_file
+	jsr SETNAM
+	lda #(^vram_tiles + 2)
+	ldx #<vram_tiles
+	ldy #>vram_tiles
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_sxetbpp_map_file-sxetbpp_map_file)
+	ldx #<sxetbpp_map_file
+	ldy #>sxetbpp_map_file
+	jsr SETNAM
+	lda #(^vram_l0_map + 2)
+	ldx #<vram_l0_map
+	ldy #>vram_l0_map
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_sxetbpp_pal_file-sxetbpp_pal_file)
+	ldx #<sxetbpp_pal_file
+	ldy #>sxetbpp_pal_file
+	jsr SETNAM
+	lda #(^vram_pal + 2)
+	ldx #<vram_pal
+	ldy #>vram_pal
+	jsr LOAD
+
+	rts
+
+;==================================================
+; load_8x16_2bpp
+;==================================================
+load_8x16_2bpp:
+	; set video mode
+	lda #%00010001		; l0 enabled
+	sta veradcvideo
+
+	; set the l0 tile mode	
+	lda #%00000001 	; height (2-bits) - 0 (32 tiles)
+					; width (2-bits) - 0 (32 tiles
+					; T256C - 0
+					; bitmap mode - 0
+					; color depth (2-bits) - 1 (2bpp)
+	sta veral0config
+
+	lda #(<(vram_tiles >> 9) | (1 << 1) | 0)
+								;  height    |  width
+	sta veral0tilebase
+	
+	; set the tile map base address
+	lda #<(vram_l0_map >> 9)
+	sta veral0mapbase
+
+	; set video scale to 2x
+	lda #64
+	sta veradchscale
+	sta veradcvscale
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exstbpp_tile_file-exstbpp_tile_file)
+	ldx #<exstbpp_tile_file
+	ldy #>exstbpp_tile_file
+	jsr SETNAM
+	lda #(^vram_tiles + 2)
+	ldx #<vram_tiles
+	ldy #>vram_tiles
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exstbpp_map_file-exstbpp_map_file)
+	ldx #<exstbpp_map_file
+	ldy #>exstbpp_map_file
+	jsr SETNAM
+	lda #(^vram_l0_map + 2)
+	ldx #<vram_l0_map
+	ldy #>vram_l0_map
+	jsr LOAD
+
+	lda #1
+	ldx #8
+	ldy #0
+	jsr SETLFS
+	lda #(end_exstbpp_pal_file-exstbpp_pal_file)
+	ldx #<exstbpp_pal_file
+	ldy #>exstbpp_pal_file
 	jsr SETNAM
 	lda #(^vram_pal + 2)
 	ldx #<vram_pal
