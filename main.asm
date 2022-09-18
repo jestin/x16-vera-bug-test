@@ -273,7 +273,13 @@ tick:
 	bne :+
 	jsr load_16x16_8bpp
 :
-
+	lda zp_mode
+	cmp #12
+	bne :+
+	stz zp_mode
+	stz zp_loaded
+	bra @return
+:
 
 	lda #1
 	sta zp_loaded
