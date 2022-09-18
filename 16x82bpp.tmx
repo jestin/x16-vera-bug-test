@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.8" tiledversion="1.8.2" orientation="orthogonal" renderorder="right-down" width="32" height="32" tilewidth="16" tileheight="8" infinite="0" nextlayerid="2" nextobjectid="1">
- <tileset firstgid="1" source="16x82BPPT.BIN.0.tsx"/>
- <tileset firstgid="5" source="16x82BPPT.BIN.1.tsx"/>
+ <tileset firstgid="1" source="16X82BPPT.BIN.0.tsx"/>
+ <tileset firstgid="5" source="16X82BPPT.BIN.1.tsx"/>
  <layer id="1" name="l0" width="32" height="32">
   <data encoding="csv">
 2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
