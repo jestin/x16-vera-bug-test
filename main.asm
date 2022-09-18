@@ -278,7 +278,7 @@ tick:
 	bne :+
 	stz zp_mode
 	stz zp_loaded
-	bra @return
+	jmp @return
 :
 
 	lda #1
@@ -288,7 +288,95 @@ tick:
 	; check joystick
 
 	jsr GETIN
-	beq @return
+	; beq @return
+
+	cmp #$30
+	bne :+
+	lda #0
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$31
+	bne :+
+	lda #1
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$32
+	bne :+
+	lda #2
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$33
+	bne :+
+	lda #3
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$34
+	bne :+
+	lda #4
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$35
+	bne :+
+	lda #5
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$36
+	bne :+
+	lda #6
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$37
+	bne :+
+	lda #7
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$38
+	bne :+
+	lda #8
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$39
+	bne :+
+	lda #9
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$41
+	bne :+
+	lda #10
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+	cmp #$42
+	bne :+
+	lda #11
+	sta zp_mode
+	stz zp_loaded
+	jmp @return
+:
+
+	cmp #$20
+	bne @return
 	inc zp_mode
 	stz zp_loaded
 
